@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Blog</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            opacity: 0; /* Hide the content initially */
+            transition: opacity 0.5s ease; /* Add transition effect */
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007bff;
+        }
+        form {
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label, input, textarea, button {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input, textarea {
+            width: calc(100% - 22px);
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .post {
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            opacity: 0; /* Hide posts initially */
+            transition: opacity 0.5s ease; /* Add transition effect */
+        }
+        .fadeIn {
+            opacity: 1; /* Show the content with animation */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Blog</h1>
+        
+        <!-- Form to add new post -->
+        <form id="addPostForm">
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required>
+            <label for="author">Author:</label>
+            <input type="text" id="author" name="author" required>
+            <label for="content">Content:</label>
+            <textarea id="content" name="content" rows="4" required></textarea>
+            <button type="submit">Add Post</button>
+        </form>
+
+        <!-- Container for displaying posts -->
+        <div id="postsContainer">
+            <!-- Posts will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- AWS SDK for JavaScript -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1219.0.min.js"></script>
+
+    <script>
+        // Initialize AWS SDK
+        AWS.config.region = 'YOUR_REGION'; // Specify your AWS region
+        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+            IdentityPoolId: 'YOUR_IDENTITY_POOL_ID' // Specify your Cognito Identity Pool ID
+        });
+
+        // Create DynamoDB service object
+        var dynamodb = new AWS.DynamoDB();
+
+        // Function to add a new post to DynamoDB
+        function addPostToDynamoDB(postData) {
+            var params = {
+                TableName: 'BlogPosts',
+                Item: {
+                    'PostID': { S: postData.id.toString() },
+                    'Title': { S: postData.title },
+                    'Author': { S: postData.author },
+                    'Content': { S: postData.content },
+                    'Timestamp': { N: postData.timestamp.toString() }
+                }
+            };
+
+            dynamodb.putItem(params, function(err, data) {
+                if (err) {
+                    console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+                } else {
+                    console.log("Added item:", JSON.stringify(data, null, 2));
+                }
+            });
+        }
+
+        // Function to render a post in the UI with animation
+        function renderPostWithAnimation(postData) {
+            const postElement = document.createElement('div');
+            postElement.classList.add('post');
+            postElement.innerHTML = `
+                <h2>${postData.Title.S}</h2>
+                <p><strong>Author:</strong> ${postData.Author.S}</p>
+                <p>${postData.Content.S}</p>
+                <p><em>${new Date(parseInt(postData.Timestamp.N)).toLocaleString()}</em></p>
+            `;
+            document.getElementById('postsContainer').appendChild(postElement);
+
+            // Trigger CSS animation by adding class
+            setTimeout(function() {
+                postElement.classList.add('fadeIn');
+            }, 100); // Delay added to ensure animation effect
+        }
+
+        // Show content after a short delay to allow CSS animation to take effect
+        setTimeout(function() {
+            document.body.style.opacity = 1;
+        }, 100); // Adjust delay as needed
+        
+        // Call the render function with the provided JSON data
+        renderPostWithAnimation({
+          "POSTID": {
+            "S": "ED1160\n"
+          },
+          "Author": {
+            "S": "Gaurav Mishra"
+          },
+          "Content": {
+            "S": "Twisted Lies"
+          },
+          "Timestamp": {
+            "N": "29"
+          },
+          "Title": {
+            "S": "Christian Harper"
+          }
+        });
+    </script>
+</body>
+</html>
